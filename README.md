@@ -2,7 +2,7 @@
 `last_mile_delivery_synergies` is an implementation of last-mile delivery synergies between passenger and freight transport for urban areas using a MILP model and Google OR-Tools.
 
 This tool implements a synergy scheme between passenger and freight transportation for last-mile deliveries in urban areas. The operating scheme relies on the selection of existing bus routes, where parcels are loaded, and bus stops, where parcels are unloaded, while demand with limited access to the bus system is served by a truck. To replicate the operating scheme, we develop a Mixed Integer Linear Programming model demonstrating the use of buses, and combine it with an algorithm for Vehicle Routing with Time Windows to simulate the operation of trucks. The model designs a minimum cost scheme by taking into account operator, passenger, and external costs.
-The MILP Model is implemented using Gurobi solver, while the vehicle routing problem is solved using Google OR-Tools.
+The MILP Model is implemented using Gurobi solver (https://www.gurobi.com/), while the vehicle routing problem is solved using Google OR-Tools (https://developers.google.com/optimization/routing/vrptw).
 
 Supported functionalities:
 
