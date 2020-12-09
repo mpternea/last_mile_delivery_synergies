@@ -21,7 +21,7 @@ If you use `last_mile_delivery_synergies` in your research, please cite our pape
    booktitle={Proceedings of the Annual Meeting of Transportation Research Board},
    pages={1--5},  
    year={2018} 
-   }
+}
 ```
 
 Our paper can be found here: https://www.researchgate.net/profile/Chien_Lun_Lan/publication/335796051_A_Feasibility_Study_for_Last-Mile_Synergies_between_Passenger_and_Freight_Transport_for_an_Urban_Area/links/5e7ace58299bf1f3873fc612/A-Feasibility-Study-for-Last-Mile-Synergies-between-Passenger-and-Freight-Transport-for-an-Urban-Area.pdf
