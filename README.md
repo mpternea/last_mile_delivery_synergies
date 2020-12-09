@@ -7,8 +7,8 @@ The MILP Model is implemented using Gurobi solver, while the vehicle routing pro
 Supported functionalities:
 
 - A mixed integer-linear programming model that determines the allocation of demand nodes to bus routes and stops based on the minimization of total cost, including environmental externalities.
-- A modified version of Google OR-Tools Vehicle Routing Problem with Time Windows. The modifications enable for soft time windows, multiple visits to the depot, and demand that is spread in multiple time windows for the same node within a day.
-- Calculation and plot generation of fuel emissions for different values of the average demand per node.
+- A modified version of Google OR-Tools Vehicle Routing Problem with Time Windows. The modifications enable the consideration of soft time windows, multiple visits to the depot, and for nodes with multiple demand requests corresponding to different time windows within a day.
+- Calculation and plot generation of fuel emissions for different values of average demand per node.
 
 License:
 
@@ -24,4 +24,4 @@ If you use `last_mile_delivery_synergies` in your research, please cite our pape
 }
 ```
 
-The paper can be found here: https://www.researchgate.net/profile/Chien_Lun_Lan/publication/335796051_A_Feasibility_Study_for_Last-Mile_Synergies_between_Passenger_and_Freight_Transport_for_an_Urban_Area/links/5e7ace58299bf1f3873fc612/A-Feasibility-Study-for-Last-Mile-Synergies-between-Passenger-and-Freight-Transport-for-an-Urban-Area.pdf
+Our paper can be found here: https://www.researchgate.net/profile/Chien_Lun_Lan/publication/335796051_A_Feasibility_Study_for_Last-Mile_Synergies_between_Passenger_and_Freight_Transport_for_an_Urban_Area/links/5e7ace58299bf1f3873fc612/A-Feasibility-Study-for-Last-Mile-Synergies-between-Passenger-and-Freight-Transport-for-an-Urban-Area.pdf
