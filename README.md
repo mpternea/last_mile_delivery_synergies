@@ -15,12 +15,12 @@ License:
 If you use `last_mile_delivery_synergies` in your research, please cite our paper:
 
 ```
-    @inproceedings{pternea2018feasibility,
-       title={A feasibility study for last-mile synergies between passenger and freight transport for an urban area},
-       author={Pternea, Moschoula and Lan, Chien-Lun and Haghani, Ali and Chin, Shih Miao},  
-       booktitle={Proceedings of the Annual Meeting of Transportation Research Board},
-       pages={1--5},  
-       year={2018} 
+@inproceedings{pternea2018feasibility,
+   title={A feasibility study for last-mile synergies between passenger and freight transport for an urban area},
+   author={Pternea, Moschoula and Lan, Chien-Lun and Haghani, Ali and Chin, Shih Miao},  
+   booktitle={Proceedings of the Annual Meeting of Transportation Research Board},
+   pages={1--5},  
+   year={2018} 
    }
 ```
 
