@@ -5,20 +5,21 @@ This tool implements a synergy scheme between passenger and freight transportati
 The MILP Model is implemented using Gurobi solver, while the vehicle routing problem is solved using Google OR-Tools.
 
 Supported functionalities:
-A mixed integer-linear programming model that determines the allocation of demand nodes to bus routes and stops based on the minimization of total cost, including environmental externalities.
-A modified version of Google OR-Tools Vehicle Routing Problem with Time Windows. The modifications enable for soft time windows, multiple visits to the depot, and demand that is spread in multiple time windows for the same node within a day.
-Calculation and plot generation of CO2 emissions for different values of the average demand per node.
+
+- A mixed integer-linear programming model that determines the allocation of demand nodes to bus routes and stops based on the minimization of total cost, including environmental externalities.
+- A modified version of Google OR-Tools Vehicle Routing Problem with Time Windows. The modifications enable for soft time windows, multiple visits to the depot, and demand that is spread in multiple time windows for the same node within a day.
+- Calculation and plot generation of fuel emissions for different values of the average demand per node.
 
 License:
 
 If you use `last_mile_delivery_synergies` in your research, please cite our paper:
 
-@inproceedings{pternea_synergies,
-author = {Pternea, Moschoula, and Lan, Chien-Lun, and Haghani, Ali and Chin, Shih-Miao},
-year = {2018},
-month = {01},
-pages = {1-5},
-title = {A Feasibility Study for Last-Mile Synergies between Passenger and Freight Transport for an Urban Area}
-}``
+@inproceedings{pternea2018feasibility,
+  title={A feasibility study for last-mile synergies between passenger and freight transport for an urban area},
+  author={Pternea, Moschoula and Lan, Chien-Lun and Haghani, Ali and Chin, Shih Miao},
+  booktitle={Proceedings of the Annual Meeting of Transportation Research Board},
+  pages={1--5},
+  year={2018}
+}
 
 The paper can be found here: https://www.researchgate.net/profile/Chien_Lun_Lan/publication/335796051_A_Feasibility_Study_for_Last-Mile_Synergies_between_Passenger_and_Freight_Transport_for_an_Urban_Area/links/5e7ace58299bf1f3873fc612/A-Feasibility-Study-for-Last-Mile-Synergies-between-Passenger-and-Freight-Transport-for-an-Urban-Area.pdf
