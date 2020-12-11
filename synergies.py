@@ -28,14 +28,14 @@ import math
 import utilities
 
 class Experiment:
-    def __init__ (self, CaseStudy, scheme):
-        self.CaseStudy = CaseStudy # CaseStudy: Specific, given data (not just the network)
+    def __init__ (self, case_study, scheme):
+        self.case_study = case_study # case_study: Specific, given data (not just the network)
         self.scheme = scheme
-        self.name = 'EXP_' + str(CaseStudy.name) + '_' + scheme
+        self.name = 'EXP_' + str(case_study.name) + '_' + scheme
         self.vmt_total = None
         self.vmt_truck = None
         self.vmt_bus = None
-        self.demand = CaseStudy.tot_dem
+        self.demand = case_study.tot_dem
         self.time = None
         self.feasible = None
         self.truck_fuel = None
@@ -44,7 +44,8 @@ class Experiment:
         self.truck_co2 = None
         self.bus_co2 = None
         self.total_co2 = None
-
+        self.feasible_bus = None
+        
     def __repr__(self):
             return "<Exp %s>" % (self.name)
     def getEmissions (self,truck_fuel_gallons_per_100_miles, grams_co2_per_fuel_gallon,
@@ -62,14 +63,24 @@ class Experiment:
         total_co2 = truck_co2 + bus_co2
         return (truck_fuel, bus_fuel, total_fuel, truck_co2, bus_co2, total_co2)
 
-        
-class CaseStudy:
-    def __init__ (self, network, demav, peak_to_off, route_costs, stop_costs, c_tm, c_dwell, c_local, c_late, c_freq,
-                  bus_types, cap_bus, fleet_bus, cost_fixed_bus, cost_km_bus, distlim, 
-                  f_peak_range, f_off_range, start, end, tw_len,
-                  bus_start, bus_end, peak_periods,seed,bus_speed,only_one_tw_per_node,
-                  num_trucks_init, time_per_dem_unit, horizon, speed, truck_capacity,single_route_truck,
-                  case_id, f_meters_to_miles): # specific values for costs, not the random ranges
+class CaseStudy:        
+    def __init__ (self, network, demav, peak_to_off = 1.5, route_costs = [30000, 35000, 40000],
+          stop_costs = [7000, 7500, 8000] , c_tm = 400, c_dwell = 15,
+          c_local = 8, c_late = 10, c_freq = 400,
+          bus_types = ['BusType1'], cap_bus = {'BusType1':30}, fleet_bus = {'BusType1': 40},
+          cost_fixed_bus = {'BusType1':300000}, cost_km_bus = {'BusType1': 50},
+          c_route = {'R3': 35000, 'R2': 30000, 'R1': 30000},
+          c_stop = {('R3', 12): 7500, ('R2', 6): 8000, ('R1', 56): 8000, ('R3', 94): 8000,
+                    ('R2', 116): 7500, ('R1', 66): 7500},
+          vehicle_route = {'R3': 'BusType1', 'R2': 'BusType1', 'R1': 'BusType1'},
+          b_freq_peak_route = {'R3': 4, 'R2': 5, 'R1': 4},
+          b_freq_off_route = {'R3': 2, 'R2': 2, 'R1': 2},
+          distlim = 500, f_peak_range = [4,5], f_off_range = [2, 3], start = 9, end = 13, tw_len = 2,
+          bus_start = 10, bus_end = 17, peak_periods = [(8, 10), (16, 18)],
+          bus_speed = 30, only_one_tw_per_node = True,
+          num_trucks_init = 30, time_per_dem_unit = 10, horizon = 72000, speed = 20, 
+          truck_capacity = 150, single_route_truck = True,
+          case_id = 1, f_meters_to_miles = 0.000621371): 
     
         self.network = network
         self.demav = demav
@@ -90,12 +101,12 @@ class CaseStudy:
         self.f_peak_range = f_peak_range
         self.f_off_range = f_off_range
         self.start = start
+        
         self.end = end
         self.tw_len = tw_len
         self.bus_start = bus_start 
         self.bus_end = bus_end 
         self.peak_periods = peak_periods # peak_periods = [(7,9), (16,18)]      
-        self.seed = seed
         self.bus_speed = bus_speed
         self.one_tw_per_node = only_one_tw_per_node
         # Truck data
@@ -117,15 +128,22 @@ class CaseStudy:
         self.tot_dem_in = sum(self.demand[k,t] for k in self.nodes_range for t in self.twindows)
         self.tot_dem_out = self.tot_dem - self.tot_dem_in
         self.nodes_bus_range = set(self.nodes_range) & set(self.network.nodes_bus)
-        self.TotDemBusInRange = sum(self.demand[k,t] for k in  self.nodes_bus_range for t in self.twindows) 
-        self.tot_dem_nodes_bus_tw = self.getDemBusTW() # I might not be using this
-        (self.c_route, self.c_stop, self.vehicle_route, self.b_freq_peak_route, self.b_freq_off_route) = self.getRandomStuff()
+        self.TotDemBusInRange = sum(self.demand[k,t] for k in  self.nodes_bus_range for t in self.twindows)
+        self.c_route = {'R3': 35000, 'R2': 30000, 'R1': 30000} # Cost for using each route
+        self.c_stop = c_stop
+        self.vehicle_route = vehicle_route
+        self.b_freq_peak_route = b_freq_peak_route
+        self.b_freq_off_route = b_freq_off_route
+
+        self.tot_dem_nodes_bus_tw = self.getDemBusTW() 
+        
         self.routes_type = self.getRouteType()
         (self.b_freq_tw, self.b_freq_any_peak_tw, self.b_freq_any_off_tw) = self.getFreqQ ()
         (self.cap_basic, self.tot_cap_basic_tw, self.tot_cap_basic) = self.getCap()
         self.cost_route_round = self.getCostRr ()
         (self.vmt_basic_route, self.vmt_bus_basic_total) = self.getVmtBus(f_meters_to_miles, self.b_freq_tw)
-        self.exper_list  = []
+        self.exp_bus = None
+        self.exp_truck = None
 #        (self.vmt_route, self.vmt_bus_total) = self.getVmtB ()
 
     def __repr__(self):
@@ -159,6 +177,7 @@ class CaseStudy:
         return (total_truckCap)
         
     def getWindows (self):
+        print ("Aaaaaaaaaaaaaaaaaaaaaaaaaa", self.start)
         start = self.start
         end = self.end
         tw_len = self.tw_len
@@ -166,10 +185,10 @@ class CaseStudy:
         bus_end = self.bus_end
         peak_periods = self.peak_periods
         # Calculate stime windows, business, peak, according to data
-        if (end-start)%tw_len !=0:
-            numtw = int((end-start)/tw_len) +1 # The last time window will be smaller
+        if (end - start) % tw_len != 0:
+            numtw = int((end-start) / tw_len) +1 # The last time window will be smaller
         else:
-            numtw = int((end-start)/tw_len)
+            numtw = int((end-start) / tw_len)
         twindows = [i for i in range (1, int(numtw+1))]
         tw_start = {}
         tw_end=  {}
@@ -205,7 +224,6 @@ class CaseStudy:
         nodes_not_range = []
         for demnode in dem_nodes:
             if pot_stops[demnode] == []:
-#                print ('BE CAREFUL! NODE', demnode, 'UNSERVED DUE TO DISTANCE!')
                 nodes_not_range.append(demnode)
         nodes_range = list(set(dem_nodes) - set(nodes_not_range))
         return (nodes_range, nodes_not_range)
@@ -223,13 +241,13 @@ class CaseStudy:
         areas_res = network.areas_res
         nodes_area = network.nodes_area
         tw_no_bus = [tw for tw in twindows if tw not in twindows_bus]  
-        tot_dem = round(demav*len(dem_nodes),0)
+        tot_dem = round(demav * len(dem_nodes),0)
         # If the demand of a node is spread across multiple time windows
         if one_tw_per_node == 0:
             ptwbus = len(twindows_bus)*peak_to_off/(len(twindows_bus)*peak_to_off+(len(twindows)-len(twindows_bus)))
             # Returns demand per node and time window.
             nums = [random.randint(1,4) for area in areas] ### Why 4?
-            pdem = [i/sum(nums) for i in nums]
+            pdem = [i / sum(nums) for i in nums]
             p_dem_per_area = dict(zip(areas, pdem))
             #TotDemPerTW = {tw:int (random.uniform (DemLB,DemUB)*len(dem_nodes)) for tw in twindows}
             daily_p_dem_per_area = {area: p_dem_per_area[area]*tot_dem for area in areas}
@@ -244,7 +262,7 @@ class CaseStudy:
                 totbusdem = peak_dem_area[area]
                 dem_tw_bus_area[area] = utilities.getSum (twindows_bus, totbusdem) # For business time windows
                 totnonbusdem = off_dem_area[area]
-                dem_tw_nonbus_area[area] = utilities.getSum (tw_no_bus, totnonbusdem) #
+                dem_tw_nonbus_area[area] = utilities.getSum (tw_no_bus, totnonbusdem)
             dem_tw_area = {}
             for area in areas:
                 dem_tw_area[area] = {}
@@ -263,14 +281,14 @@ class CaseStudy:
                 for tw in dtemp:
                     for node in dtemp[tw]:
                         demand[node,tw] = dtemp[tw][node]
-            dem_per_node = {node: sum(demand[node,tw] for tw in twindows) for node in dem_nodes}
+            dem_per_node = {node: sum(demand[node, tw] for tw in twindows) for node in dem_nodes}
             tw_w_demand = {node: 'Multiple' for node in dem_nodes}
         else: # If we only have one time window with demand for each node     
             tw_w_demand = {}
             nodes_bus = network.nodes_bus
             # Returns demand per node and time window.
             tw_no_bus = [tw for tw in twindows if tw not in twindows_bus]  
-            tot_dem = round(demav*len(dem_nodes),0)
+            tot_dem = round(demav*len(dem_nodes), 0)
             dem_per_node  = utilities.F_N_SUM (dem_nodes,tot_dem)
             demand = {}
             for node in dem_nodes:
@@ -306,13 +324,14 @@ class CaseStudy:
         for i in routes:
             for t in twindows:
                 if t in twindows_peak:
-                    b_freq_tw[i,t] = b_freq_peak_route[i] * tw_len
+                    b_freq_tw[i, t] = b_freq_peak_route[i] * tw_len
                     # fpeak in buses per hour, tw_len in hours/time window
                 else:
                     b_freq_tw[i,t] = b_freq_off_route[i] * tw_len
         b_freq_any_peak_tw = {r : b_freq_peak_route[r] * tw_len for r in routes}
         b_freq_any_off_tw = {r : b_freq_off_route[r] * tw_len for r in routes}
         return (b_freq_tw, b_freq_any_peak_tw, b_freq_any_off_tw)
+
         
     def getCostRr (self):
         routes = self.network.routes
@@ -339,7 +358,7 @@ class CaseStudy:
         tot_cap_basic_tw = {tw: sum(cap_basic[i,tw] for i in routes) for tw in twindows}
         return (cap_basic, tot_cap_basic_tw, tot_cap_basic)
     
-    def getDemBusTW(self): # Do I use it anywhere?
+    def getDemBusTW(self): 
         nodes_bus_range = self.nodes_bus_range
         demand = self.demand
         twindows = self.twindows
@@ -358,49 +377,8 @@ class CaseStudy:
             routes_type[bustype].append(route)
         return (routes_type)
 
-    
-    def getRandomStuff (self):
-        ### Contains all parameters that are created randomly.
-        random.seed(self.seed)
-        routes = self.network.routes
-        stops_per_route = self.network.stops_per_route
-        route_costs = self.route_costs
-        stop_costs = self.stop_costs
-        bus_types = self.bus_types
-        f_peak_range = self.f_peak_range
-        f_off_range = self.f_off_range
-        
-        c_route = {r: random.choice(route_costs) for r in routes}
-        vehicle_route = {r: random.choice(bus_types) for r in routes}
-        b_freq_peak_route = {r: random.choice(f_peak_range) for r in routes}
-        b_freq_off_route = {r: random.choice(f_off_range) for r in routes}
-        c_stop = {}
-        for r in routes:
-            for s in stops_per_route[r]:
-                c_stop[r,s] = random.choice(stop_costs)
-        return (c_route, c_stop, vehicle_route,b_freq_peak_route,b_freq_off_route)
 
-    def get_freq (self):
-        routes = self.network.routes
-        b_freq_any_peak_tw = self.b_freq_any_peak_tw
-        b_freq_any_off_tw = self.b_freq_any_off_tw
-        df_peak_tw = self.df_peak_tw
-        df_off_tw = self.df_off_tw
-        twindows_off = self.twindows_off
-        twindows_peak = self.twindows_peak
-        tw_len = self.tw_len
-        freq_tw = {}
-        freq_peak_h = {}
-        freq_off_h = {}
-        for i in routes:
-            for tw in twindows_peak:
-                freq_tw[i,tw] = b_freq_any_peak_tw[i] + df_peak_tw[i]
-            for tw in twindows_off:
-                freq_tw[i,tw] = b_freq_any_off_tw[i] + df_off_tw[i]
-        for i in routes:
-            freq_peak_h[i] = (b_freq_any_peak_tw[i] + df_peak_tw[i]) / tw_len
-            freq_off_h[i] = (b_freq_any_off_tw[i] + df_off_tw[i]) / tw_len
-        return (freq_tw, freq_peak_h, freq_off_h )
+
         
     def getVmtBus (self, f_meters_to_miles, freq_tw):
         routes = self.network.routes
@@ -418,8 +396,8 @@ class CaseStudy:
         
 
 class Network:
-    def __init__ (self,nodes,dem_nodes,nodes_res, nodes_bus, routes, stops, dx, dy,
-                  stops_per_route, areas_res, AreasCom, areas, area_per_node,nodes_area,
+    def __init__ (self, nodes, dem_nodes, nodes_res, nodes_bus, routes, stops, dx, dy,
+                  stops_per_route, areas_res, AreasCom, areas, area_per_node, nodes_area,
                   depot, p_res):
         """ Initializes an object of type Network, which represents the area of interest
         in terms of nodes, links, bus routes, stops, and land use. """

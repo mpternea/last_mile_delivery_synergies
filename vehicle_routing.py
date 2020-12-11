@@ -14,11 +14,8 @@ We modify the code of OR-Tools to allow for truck reloading at the depot.
 
 from ortools.constraint_solver import pywrapcp
 from ortools.constraint_solver import routing_enums_pb2
+import utilities
 
-def distance(x1, y1, x2, y2):
-    # Manhattan distance
-    dist = abs(x1 - x2) + abs(y1 - y2)
-    return dist
 
     
 class CreateDistanceCallback(object):
@@ -36,7 +33,7 @@ class CreateDistanceCallback(object):
         y1 = locations[from_node][1]
         x2 = locations[to_node][0]
         y2 = locations[to_node][1]
-        self.matrix[from_node][to_node] = distance(x1, y1, x2, y2)
+        self.matrix[from_node][to_node] = utilities.distance(x1, y1, x2, y2)
 
   def Distance(self, from_node, to_node):
     return self.matrix[from_node][to_node]
@@ -90,7 +87,7 @@ class CreateTotalTimeCallback(object):
     return service_time + travel_time
  
     
-def main(data, num_vehicles, time_per_demand_unit, horizon, speed, VehicleCapacity,
+def vrp(data, num_vehicles, time_per_demand_unit, horizon, speed, VehicleCapacity,
          first_reload_node_index):
 
   res = [] 

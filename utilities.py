@@ -12,21 +12,25 @@ import gurobipy as grb
 from itertools import groupby
 import openpyxl
 
-def getGrid (Lx, Ly, unit_distance,dstops, n, p_res, rhor_y, rvert_x, r3x, r3y):
+def getGrid (Lx, Ly, unit_distance, dstops, n, p_res, rhor_y, rvert_x, r3x, r3y):
+    """ Generate the underlying grid representation of the network
+    using dimensions, grid density, distance between consecutive stops, and
+    bus line geometry. For now, the exact classification of nodes as commercial and
+    residential is decided randomly, based on the percentage p_res."""
     # 1) Generate a grid Lx * Ly (Number of squares, not nodes)
     x_range = [unit_distance*i for i in range (0, Lx+1)]
     y_range = [unit_distance*i for i in range (0, Ly+1)]
     max_len_x = max(x_range)
     max_len_y = max(y_range)
-    num_nodes_x = int(Lx+1)
-    num_nodes_y = int(Ly+1)
+    num_nodes_x = int(Lx + 1)
+    num_nodes_y = int(Ly + 1)
     num_nodes = num_nodes_x * num_nodes_y
     nodes = [i for i in range (1, num_nodes+1)]
              
     coords = []
     for y in y_range:
         for x in x_range:
-            coords.append((x,y)) 
+            coords.append((x, y)) 
     coords = dict(zip(nodes, coords))                
     X = {node: coords[node][0] for node in nodes}
     Y = {node: coords[node][1] for node in nodes}
@@ -37,14 +41,14 @@ def getGrid (Lx, Ly, unit_distance,dstops, n, p_res, rhor_y, rvert_x, r3x, r3y):
         if X[i] == x_depot and Y[i] == y_depot:
             depot = i
     
-    # 2) Divide into equal regions (e.g. 3*3, 4*4, similarly to the paper)
+    # 2) Divide into equal regions (e.g. 3*3, 4*4)
     # Find the coordinates of the nodes in the borders, in each dimension.
     border_x = list(np.linspace(0, max_len_x, num = n+1))
     BorderY = list(np.linspace(0, max_len_y, num = n+1))
     
     # Now define areas
-    numAreas = n*n
-    Areas = ['A' + str(i) for i in range (1, numAreas +1)]
+    num_areas = n*n
+    Areas = ['A' + str(i) for i in range (1, num_areas +1)]
     x_bounds_all = []
     y_bounds_all = []
     for (iy,y) in enumerate(BorderY):
@@ -79,20 +83,21 @@ def getGrid (Lx, Ly, unit_distance,dstops, n, p_res, rhor_y, rvert_x, r3x, r3y):
             if XNode >= x1_low and XNode<=x1_up:
                 y1_low = y_bounds_area[area][0]
                 y1_up = y_bounds_area[area][1]
-                if YNode >=y1_low and YNode <= y1_up:
+                if YNode >= y1_low and YNode <= y1_up:
                     areas_node[node].append(area)
     for node in areas_node:
-        if len (areas_node[node]) ==1:
+        if len (areas_node[node]) == 1:
             area = areas_node[node][0]
             area_node[node] = area
             nodes_area[area].append(node)
         else:
-            area = random.choice ( areas_node[node])
+            area = random.choice (areas_node[node])
             area_node[node] = area
             nodes_area[area].append(node)
             
     # 4) Define Areas as business ("B") or residential ("R").
-    AreasRes = random.sample (Areas, int(p_res*numAreas))
+    print (Areas, int(p_res * num_areas))
+    AreasRes = random.sample (Areas, int(p_res * num_areas))
     AreasCom = [a for a in Areas if a not in AreasRes]
     
     # 5) Define nodes as business or residential
@@ -151,23 +156,23 @@ def getGrid (Lx, Ly, unit_distance,dstops, n, p_res, rhor_y, rvert_x, r3x, r3y):
     for route in routes:
         for stop in stops_route[route]:
             stops.add(stop)
-    return (nodes,nodes_res, nodes_bus, routes, stops, X, Y, stops_route,
+    return (nodes, nodes_res, nodes_bus, routes, stops, X, Y, stops_route,
             AreasRes, AreasCom, Areas, area_node,nodes_area, depot)
  
     
 def getWindows (start, end, twlen, bus_start, bus_end, peak_periods):
     # Calculate time windows, business, peak, according to data
     if (end-start)/twlen !=0:
-        numtw = int((end-start)/twlen) +1 # The last time window will be smaller
+        numtw = int((end-start) / twlen) +1 # The last time window will be smaller
     else:
-        numtw = int((end-start)/twlen)
+        numtw = int((end-start) / twlen)
     
     
     twindows = [i for i in range (1, int(numtw+1))]
     tw_start = {}
     tw_end=  {}
     for (ind,t) in enumerate(twindows):
-        tw_start[t] = start + ind*twlen
+        tw_start[t] = start + ind * twlen
         tw_end[t] = tw_start[t] + twlen
     if tw_end[twindows[-1]] > end: # We have reached the final time windows
             tw_end[twindows[-1]] = end
@@ -179,7 +184,7 @@ def getWindows (start, end, twlen, bus_start, bus_end, peak_periods):
     for period in peak_periods:
         start = period[0]
         end = period[1]
-        twindows_peak.extend ([tw for tw in twindows if tw_start[tw]>= start and tw_end[tw]<= end])
+        twindows_peak.extend ([tw for tw in twindows if tw_start[tw] >= start and tw_end[tw] <= end])
     return (twindows, twindows_bus, twindows_peak, tw_start_end)
 
     
@@ -191,24 +196,24 @@ def getStopsFromNode (nodes_sequence, dnodes, dstops):
         lastnode_ind_coeff = numgroups
     else:
         lastnode_ind_coeff = numgroups + 1
-    stop_inds = [int(i*ratio) for i in range (0,lastnode_ind_coeff)]
+    stop_inds = [int(i * ratio) for i in range (0, lastnode_ind_coeff)]
     stop_seq = [nodes_sequence[i] for i in stop_inds]
     return (stop_seq)
 
     
-def getSum (n_keys,sum_keys):
+def getSum (n_keys, sum_keys):
+    # Sequentially increases a set of values by randomly choosing one in each step.
     ssum = 0
     sum_so_far = {key: 0 for key in n_keys}
     while ssum < sum_keys:
         key_to_increase = random.choice (n_keys)
         sum_so_far[key_to_increase] =  sum_so_far[key_to_increase] + 1
         ssum = ssum + 1
-
     return (sum_so_far)
 
     
 def getResults (X, df_peak_tw_m, df_off_tw_m, routes, twindows, dem_nodes):
-    # _m: Produced from the model
+    # Translates the results of the MIP model.
     routes_used = set()
     stops_used = set()
     stop_node_tw_route = {node:{tw:[] for tw in twindows} for node in dem_nodes} # {NODE:TW:(route,stop)}
@@ -218,7 +223,7 @@ def getResults (X, df_peak_tw_m, df_off_tw_m, routes, twindows, dem_nodes):
     df_off_tw = {}
     
     for (i, j, k, t) in X:
-        if X[i, j, k, t].x >0:
+        if X[i, j, k, t].x > 0:
             stops_used.add(j)
             routes_used.add(i)
             stop_node_tw_route[k][t].append((i,j))
@@ -239,52 +244,58 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
                  b_freq_any_peak_tw, b_freq_any_off_tw,time_per_route, twlen, bus_types,
                  demand, freq_tw, dist, c_route, c_stop, c_tm, c_dwell, c_local, c_late, c_freq,
                  fmax, cost_route_round, b_freq_tw, cost_fixed_bus):
+    
+    """ Implements the MILP model that assignes demand to bus routes and stops
+    and determines the required increase in bus frequency, if any.
+    Variable and constraint names are in capitals, while the names of the
+    dictionaries containing the constraints begin with a "C_".
+    """
     m = grb.Model()
     X= {}
-    print ('Now adding X')
+    print('Now adding X')
     for i in routes:
         for j in stops_route[i]:
             for k in pot_nodes[j]:
                 for t in twindows:
-                    X[i, j, k, t] = m.addVar (vtype = grb.GRB.INTEGER, name = 'X_%s_%s_%s_%s' %(i, j, k, t))
+                    X[i, j, k, t] = m.addVar(vtype = grb.GRB.INTEGER, name = 'X_%s_%s_%s_%s' %(i, j, k, t))
                     
     B = {}
-    print ('Now adding B')
+    print('Now adding B')
     for i in routes:
         for j in stops_route[i]:
-            B[i,j] = m.addVar (vtype = grb.GRB.BINARY, name = 'X_%s_%s' %(i,j))
+            B[i,j] = m.addVar(vtype = grb.GRB.BINARY, name = 'X_%s_%s' %(i,j))
     
     R = {}
-    print ('Now adding R')
+    print('Now adding R')
     for i in routes:
-        R[i] = m.addVar (vtype = grb.GRB.BINARY, name = 'R_%s' %i)
+        R[i] = m.addVar(vtype = grb.GRB.BINARY, name = 'R_%s' %i)
     
     Y = {}
-    print ('Now adding Y')
+    print('Now adding Y')
     for i in routes:
         for j in stops_route[i]:
             for k in pot_nodes[j]:
                 for t in twindows:
-                    Y[i, j, k, t] = m.addVar (vtype = grb.GRB.BINARY, name = 'Y_%s_%s_%s_%s' %(i, j, k, t))
+                    Y[i, j, k, t] = m.addVar(vtype = grb.GRB.BINARY, name = 'Y_%s_%s_%s_%s' %(i, j, k, t))
                     
-    print ('Now adding late demand')               
+    print('Now adding late demand')               
     DEM_LATE = {}
     for k in dem_nodes:
         for t in twindows:
-            DEM_LATE[k,t] = m.addVar (vtype = grb.GRB.INTEGER, lb = 0, name = 'DEM_LATE_%s_%s' %(k,t))
+            DEM_LATE[k,t] = m.addVar(vtype = grb.GRB.INTEGER, lb = 0, name = 'DEM_LATE_%s_%s' %(k,t))
     
     df_peak_tw = {} # Increase in frequency for peak hours
     df_off_tw = {} # Increase in frequency for off-peak hours
     for i in routes:
-        df_peak_tw[i] = m.addVar (vtype = grb.GRB.CONTINUOUS, lb = 0.0,name = 'DF_PEAK_%s' %i)
-        df_off_tw[i] = m.addVar (vtype = grb.GRB.CONTINUOUS, lb = 0.0, name = 'DF_OFFPEAK_%s' % i)
+        df_peak_tw[i] = m.addVar(vtype = grb.GRB.CONTINUOUS, lb = 0.0,name = 'DF_PEAK_%s' %i)
+        df_off_tw[i] = m.addVar(vtype = grb.GRB.CONTINUOUS, lb = 0.0, name = 'DF_OFFPEAK_%s' % i)
     m.update
     
-    print ('Now making linear expressions')
+    print('Now making linear expressions')
     num_veh_route = {}
     for route in routes:
         num_veh_route[route] = 2 * time_per_route[route] * (b_freq_any_peak_tw[route] + df_peak_tw[route])/ twlen
-    print ('Now making objectives')
+    print('Now making objectives')
     ## Objective function components
     # 1) Using a route
     SUM1 = grb.quicksum(c_route[i]*R[i] for i in routes)
@@ -305,8 +316,8 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
         for t in twindows:
             for link in links_route[i]:
                 sum2 = grb.quicksum(X[i, j, k, t] for j in prec_stops_route_link[i][link] for k in pot_nodes[j])
-                tot_load_link_time[i, link, t] = tot_load_per_route_time[i,t] - sum2
-                SUM3 = SUM3 + tot_load_link_time[i, link, t] * len_route_link[i,link] * c_tm
+                tot_load_link_time[i, link, t] = tot_load_per_route_time[i, t] - sum2
+                SUM3 = SUM3 + tot_load_link_time[i, link, t] * len_route_link[i, link] * c_tm
                     
     # 4) Bus dwelling stop
     SUM4 = grb.quicksum(X[i, j, k, t] for i in routes for j in stops_route[i] for k in pot_nodes[j] for t in twindows) * c_dwell
@@ -336,7 +347,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
     ############### CONSTRAINTS ##################
     #1 All demands must be served
     # 1a: By the end of the day
-    print ('Now adding C_DEM_DAY')
+    print('Now adding C_DEM_DAY')
     C_DEM_DAY = {}
     for k in nodes_range:
         C_DEM_DAY[k] = m.addConstr (grb.quicksum(X[i, j, k, t] for i in routes \
@@ -344,7 +355,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
                                       for t in twindows) == dem_node[k])
     
     # 1b: Within their time window
-    print ('Now adding C_DEM_TW')
+    print('Now adding C_DEM_TW')
     C_DEM_TW = {}
     for k in nodes_bus_range : # Not all nodes, only these that can be served by bus
         for t in twindows_bus:
@@ -352,13 +363,13 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
             for j in set(stops_route[i]) & set(pot_stops[k])) >= demand[k, t])
     
     # Calculate unserved demand
-    print ('Now adding C_DEM_LATE')
+    print('Now adding C_DEM_LATE')
     DemDiff = {} # Initialize the number of demand units that are unserved 
     # at every time unit. Demdiff[k,t] can be either positive or negative.
     for k in nodes_range:
         for t in twindows:
-            DemDiff[k, t] = sum(demand[k, ti] for ti in range (1,t+1)) \
-                                - grb.quicksum(X[i, j, k, ti] for ti in range (1,t+1) \
+            DemDiff[k, t] = sum(demand[k, ti] for ti in range (1, t + 1)) \
+                                - grb.quicksum(X[i, j, k, ti] for ti in range (1, t + 1) \
                                for i in routes for j in set(stops_route[i]) & set(pot_stops[k]))
     C_DEM_LATE= {}
     for k in nodes_range:
@@ -368,7 +379,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
             C_DEM_LATE[k, t] = m.addConstr (DEM_LATE[k, t] >= DemDiff[k, t]) # Define lower bound = 0 in the beginning.
             
     ## 2 Route Capacity
-    print ('Now adding C_CAP')
+    print('Now adding C_CAP')
     C_CAP = {}
     for i in routes:
         for t in twindows:
@@ -380,7 +391,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
                                         <= cap_basic[i, t] + DCAP)
     
     ## 3 Stop Choice
-    print ('Now adding C_STOP')
+    print('Now adding C_STOP')
     C_STOP = {}
     for i in routes:
         for j in stops_route[i]:
@@ -389,7 +400,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
                    C_STOP[i, j, k, t] = m.addConstr(X[i, j, k, t] <= demand[k,t] * B[i,j])
     
     # 4 Stop-->Route Choice
-    print ('Now adding C_ROUTE')
+    print('Now adding C_ROUTE')
     C_ROUTE = {}
     for i in routes:
         for j in stops_route[i]:
@@ -397,7 +408,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
     
     #
     # 5 Local Delivery
-    print ('Now adding C_LOCAL')
+    print('Now adding C_LOCAL')
     C_LOCAL= {}
     for i in routes:
         for j in stops_route[i]:
@@ -406,13 +417,13 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
                     C_LOCAL[i, j, k, t] = m.addConstr(X[i, j, k, t] <= demand[k,t]*Y[i, j, k, t])
     
     # 6 Fleet size
-    print ('Now adding C_FLEETSIZE')
+    print('Now adding C_FLEETSIZE')
     C_FLEET = {}
     for bt in bus_types:
         C_FLEET[bt] = m.addConstr (grb.quicksum(num_veh_route[route] for route in routes_type[bt]) <= fleet_bus[bt])
     
     # 7 Maximum frequency
-    print ('Now adding C_MAX_FREQ')
+    print('Now adding C_MAX_FREQ')
     C_MAX_FREQ_PEAK = {}
     C_MAX_FREQ_OFFPEAK = {}
     for i in routes:
@@ -424,7 +435,7 @@ def getModelBus (routes, dem_nodes, nodes_range, nodes_bus_range, stops_route, p
     m.params.MIPGap = 0.01
     #m.params.presolve = 0
     m.optimize()
-    print ('Running time:', m.runtime)
+    print('Running time:', m.runtime)
     rvector = (m, X, df_peak_tw, df_off_tw, SUM1, SUM2, SUM3, SUM4, SUM5, SUM6, SUM8, SUM9)
     if m.status == 2:
         return (rvector)
@@ -468,7 +479,7 @@ def transformInput (nodes, dx, dy, twindows,demand,twlen,tw_start_end,
             truck_nodes.append(trnode)
             truck_nodes_or_node[node].append(trnode)
     for tw in twindows:
-        node_tw_tr_node[0] = (depot,tw) # It contains the last tw 
+        node_tw_tr_node[0] = (depot, tw) # It contains the last tw 
     # Extend time windows for non-penalized early delivery from 0 to time
     for node in nodes:
         tnodes = truck_nodes_or_node[node] 
@@ -534,6 +545,11 @@ def getTruckSolution (truck_res, node_tw_tr_node, depot, only_one_tw_per_node, n
             reload = 0
         reload_route[route_name] = reload
     return (truck_routes, route_no_doubles_route_name, reload_route)
+
+def distance(x1, y1, x2, y2):
+    # Manhattan distance
+    dist = abs(x1 - x2) + abs(y1 - y2)
+    return dist
 
     
 def getVmtTruck (truck_routes,dist,factor_meters_to_miles):
