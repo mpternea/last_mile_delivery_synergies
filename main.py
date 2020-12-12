@@ -41,72 +41,71 @@ import time
                       
 def getmain(args):
     
-    
-    p_res = args ["p_res"]
-    Lx = args["Lx"]
-    Ly = args["Ly"]
-    unit_distance = args["unit_distance"]
-    dstops = args["dstops"]
-    num_areas_per_dimension = args["num_areas_per_dimension"]
-    rhor_y = args["rhor_y"]
-    rvert_x = args["rvert_x"]
-    r3x = args["r3x"]
+    options = {"truck_fuel_gallons_per_100_miles" : 6,
+               "grams_co2_per_fuel_gallon" : 8.887,
+               "bus_miles_per_fuel_gallon" : 7.2,
+               "f_meters_to_miles" : 0.000621371,
+               "peak_to_off" : 1.5
+               }
+
+    options.update(args)     
+    p_res = args ["p_res"] # Percentage of residential areas.
+    Lx = args["Lx"] # Grid length
+    Ly = args["Ly"] # Grid height
+    unit_distance = args["unit_distance"] # Unit of distance in which Lx, Ly are measured
+    dstops = args["dstops"] # Distance between consecutive stops.
+    num_areas_per_dimension = args["num_areas_per_dimension"] # Number of large squares per dimension
+    rhor_y = args["rhor_y"] # The horizontal route is located at half the height of the area
+    rvert_x = args["rvert_x"] # The vertical route is located at half the width of the area.
+    r3x = args["r3x"] # r3x and r3y indicate where the 3rd route is located.
     r3y = args["r3y"]
 
     dem_av = args ["dem_av"]
-    peak_to_off = args["peak_to_off"]
-    route_costs = args["route_costs"]
-    stop_costs = args["stop_costs"]
-    c_tm = args["c_tm"]
-    c_dwell = args["c_dwell"]
-    c_local = args["c_local"]
-    c_late = args["c_late"]
-    c_freq = args["c_freq"]
-    bus_types = args["bus_types"]
+    peak_to_off = args["peak_to_off"] # High Vs Low average demand according to node type and time of day.
+    c_tm = args["c_tm"] #3  Cost per tonne mile traveled for each bus.
+    c_dwell = args["c_dwell"] # 4 Cost per package to unload at a stop.
+    c_local = args["c_local"] # 5 Cost of assigning a demand node to a stop for local delivery.
+    c_late = args["c_late"] # 6 Cost of satisfying demand after its time window.
+    c_freq = args["c_freq"] # 7 Cost of frequency (now I use # 9 instead, as an approximation for operational cost)
+    bus_types = args["bus_types"] # Available bus types
 
-    cap_bus = args ["cap_bus"]
-    fleet_bus = args["fleet_bus"]
-    cost_fixed_bus = args["cost_fixed_bus"]
-    cost_km_bus = args["cost_km_bus"]
+    cap_bus = args ["cap_bus"] # Capacity per bus type
+    fleet_bus = args["fleet_bus"] # Available fleet for each bus type
+    cost_fixed_bus = args["cost_fixed_bus"] # 8, Fixed cost for each bus (dollars per vehicle)
+    cost_km_bus = args["cost_km_bus"] # 9 Operating cost for each bus (dollars per km)
 
-    c_route = args["c_route"]
-    c_stop = args["c_stop"]
-    vehicle_route = args["vehicle_route"]
-    b_freq_peak_route = args["b_freq_peak_route"]
-    b_freq_off_route = args["b_freq_off_route"]
+    c_route = args["c_route"]  #1 Cost of using a route.
+    c_stop = args["c_stop"] #2 Cost of using a stop
+    vehicle_route = args["vehicle_route"] # Vehicle type serving each route
+    b_freq_peak_route = args["b_freq_peak_route"] # Existing ("basic") route frequency, peak
+    b_freq_off_route = args["b_freq_off_route"] # Existing ("basic") route frequency, off-peak
 
+    distlim = args["distlim"] # Maximum range within which a node can be served by a bus stop.
+    start = args["start"]  # Beginning of first time window
+    end = args["end"] # End of last time window.
+    twlen = args["twlen"] # Length of time window (hours)
 
-
-    distlim = args["distlim"]
-    f_peak_range = args["f_peak_range"]
-    f_off_range = args["f_off_range"]
-    start = args["start"]
-    end = args["end"]
-    twlen = args["twlen"]
-
-    bus_start = args ["bus_start"]
-    bus_end = args["bus_end"]
-    peak_periods = args["peak_periods"]
-    bus_speed = args["bus_speed"]
-    one_tw_per_node = args["one_tw_per_node"]
-    num_trucks_init = args["num_trucks_init"]
-    time_per_dem_unit = args["time_per_dem_unit"]
-    horizon = args["horizon"]
-    speed = args["speed"]
-    truck_capacity = args["truck_capacity"]
-
-    single_route_truck = args ["single_route_truck"]
+    bus_start = args ["bus_start"] # start of business period
+    bus_end = args["bus_end"] # end of business period
+    peak_periods = args["peak_periods"] # start and end of peak periods
+    bus_speed = args["bus_speed"] # Average bus speed in km/h #
+    one_tw_per_node = args["one_tw_per_node"] # The demand of a node can be accumulated in 1 time window (1) or in many (0).
+    num_trucks_init = args["num_trucks_init"] # Number of available trucks
+    time_per_dem_unit = args["time_per_dem_unit"] # Time ro serve per demand unit
+    horizon = args["horizon"] # Maximum allowed trip duration (minutes)
+    speed = args["speed"] # Vehicle speed in meters per second
+    truck_capacity = args["truck_capacity"] # Capacity of each vehicle in packages
+    single_route_truck = args["single_route_truck"] # 1 if truck cannot return to  depot for reloading, 0 if yes.
     case_name_ind = args["case_name_ind"]
     f_meters_to_miles = args["f_meters_to_miles"]
-    fmax = args["fmax"]
-    num_reloads_per_vehicle = args["num_reloads_per_vehicle"]
+    fmax = args["fmax"] # Maximum allowed bus frequency (buses/hour)
+    num_reloads_per_vehicle = args["num_reloads_per_vehicle"] # Maximum number of allowed reloads per truck.
     truck_fuel_gallons_per_100_miles = args["truck_fuel_gallons_per_100_miles"]
-    grams_co2_per_fuel_gallon = args["grams_co2_per_fuel_gallon"]
-    bus_miles_per_fuel_gallon = args["bus_miles_per_fuel_gallon"]
-
-
-                      
-                     
+    grams_co2_per_fuel_gallon = args["grams_co2_per_fuel_gallon"] 
+    bus_miles_per_fuel_gallon = args["bus_miles_per_fuel_gallon"] 
+    f_meters_to_miles = args["f_meters_to_miles"] 
+    peak_to_off = args["peak_to_off"] # Ratio of peak demand to off-peak demand
+    
     # Create the network.
     (nodes,nodes_res, nodes_bus, routes, stops, dx, dy, stops_per_route,
          areas_res, areas_com, areas, area_node, nodes_area, depot) = utilities.getGrid\
@@ -120,18 +119,14 @@ def getmain(args):
                       depot, p_res)
     
     ## For levels of average demand per node: 
-    case_study = synergies.CaseStudy(network, dem_av, peak_to_off, route_costs,
-                  stop_costs, c_tm, c_dwell, c_local, c_late, c_freq,
+    case_study = synergies.CaseStudy(network, dem_av, peak_to_off,
+                  c_tm, c_dwell, c_local, c_late, c_freq,
                   bus_types, cap_bus, fleet_bus, cost_fixed_bus, cost_km_bus, 
                   c_route, c_stop, vehicle_route, b_freq_peak_route, b_freq_off_route, distlim,
-                  f_peak_range, f_off_range, start, end, twlen,
-                  bus_start, bus_end, peak_periods, bus_speed, one_tw_per_node,
+                  start, end, twlen, bus_start, bus_end, peak_periods, bus_speed, one_tw_per_node,
                   num_trucks_init, time_per_dem_unit, horizon, speed, truck_capacity, single_route_truck,
                   case_name_ind, f_meters_to_miles)
     
-
-      
-      
     ################################# BUS ONLY ####################################
     ### Check if demand can be served by passenger bus only.
     if case_study.tot_cap_basic < case_study.tot_dem_in:
@@ -146,10 +141,8 @@ def getmain(args):
     # sufficient in general but the specific requirements might make the
     # problem infeasible.
     new_exp_bus = synergies.Experiment(case_study, 'bus_only')
-#        experiments.append(new_exp_bus)
     case_study.exp_bus = new_exp_bus
     # Unwrap everything:
-#        Scheme =  new_exp_bus.scheme 
     Network = case_study.network
     
     Routes = Network.routes
@@ -255,7 +248,6 @@ def getmain(args):
                 case_study.total_truck_cap_out_of_range = case_study.truck_cap('out_of_range')
                 
             num_trucks_out_of_range = case_study.num_trucks_out_of_range
-#                total_truck_cap_out_of_range = case_study.total_truck_cap_out_of_range
             dx = case_study.network.dx
             dy = case_study.network.dy
             tw_start_end = case_study.tw_start_end
@@ -298,8 +290,6 @@ def getmain(args):
     else: #If rvector is None, i.e., the MILP was infeasible:
         new_exp_bus.feasible_bus = False
         
-        
-        
     # Calculate the "truck only" solution.
     print ('################## Truck Only ##################')
     if single_route_truck == 1:
@@ -339,7 +329,6 @@ def getmain(args):
     res = vehicle_routing.vrp(data, num_trucks_only, time_per_dem_unit, horizon, speed,
                                truck_capacity, first_reload_node_index)
     time_end_vrptw = time.time()
-#        experiments_feasible.append(new_exp_truck)
     new_exp_truck.time = time_end_vrptw - time_start_vrptw
     (truck_routes, route_no_double_route_name, reload_route)\
         = utilities.getTruckSolution(res, node_tw_truck_node, depot, one_tw_per_node, nodes_Reload)

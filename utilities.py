@@ -96,7 +96,6 @@ def getGrid (Lx, Ly, unit_distance, dstops, n, p_res, rhor_y, rvert_x, r3x, r3y)
             nodes_area[area].append(node)
             
     # 4) Define Areas as business ("B") or residential ("R").
-    print (Areas, int(p_res * num_areas))
     AreasRes = random.sample (Areas, int(p_res * num_areas))
     AreasCom = [a for a in Areas if a not in AreasRes]
     

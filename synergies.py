@@ -64,8 +64,7 @@ class Experiment:
         return (truck_fuel, bus_fuel, total_fuel, truck_co2, bus_co2, total_co2)
 
 class CaseStudy:        
-    def __init__ (self, network, demav, peak_to_off = 1.5, route_costs = [30000, 35000, 40000],
-          stop_costs = [7000, 7500, 8000] , c_tm = 400, c_dwell = 15,
+    def __init__ (self, network, demav, peak_to_off = 1.5, c_tm = 400, c_dwell = 15,
           c_local = 8, c_late = 10, c_freq = 400,
           bus_types = ['BusType1'], cap_bus = {'BusType1':30}, fleet_bus = {'BusType1': 40},
           cost_fixed_bus = {'BusType1':300000}, cost_km_bus = {'BusType1': 50},
@@ -75,7 +74,7 @@ class CaseStudy:
           vehicle_route = {'R3': 'BusType1', 'R2': 'BusType1', 'R1': 'BusType1'},
           b_freq_peak_route = {'R3': 4, 'R2': 5, 'R1': 4},
           b_freq_off_route = {'R3': 2, 'R2': 2, 'R1': 2},
-          distlim = 500, f_peak_range = [4,5], f_off_range = [2, 3], start = 9, end = 13, tw_len = 2,
+          distlim = 500,  start = 9, end = 13, tw_len = 2,
           bus_start = 10, bus_end = 17, peak_periods = [(8, 10), (16, 18)],
           bus_speed = 30, only_one_tw_per_node = True,
           num_trucks_init = 30, time_per_dem_unit = 10, horizon = 72000, speed = 20, 
@@ -85,8 +84,6 @@ class CaseStudy:
         self.network = network
         self.demav = demav
         self.peak_to_off = peak_to_off
-        self.route_costs = route_costs
-        self.stop_costs = stop_costs
         self.c_tm = c_tm
         self.c_dwell = c_dwell
         self.c_local = c_local
@@ -98,8 +95,6 @@ class CaseStudy:
         self.cost_fixed_bus = cost_fixed_bus
         self.cost_km_bus = cost_km_bus
         self.distlim = distlim
-        self.f_peak_range = f_peak_range
-        self.f_off_range = f_off_range
         self.start = start
         
         self.end = end
@@ -144,7 +139,6 @@ class CaseStudy:
         (self.vmt_basic_route, self.vmt_bus_basic_total) = self.getVmtBus(f_meters_to_miles, self.b_freq_tw)
         self.exp_bus = None
         self.exp_truck = None
-#        (self.vmt_route, self.vmt_bus_total) = self.getVmtB ()
 
     def __repr__(self):
         return "<Case %s>" % (self.name)
@@ -166,6 +160,7 @@ class CaseStudy:
         return (new_num_trucks)  
         
     def getTruckCap (self, case): # case: 'initial', 'out_of_range', 'truck_only'
+        # Get total truck capacity
         if case == 'initial':
             num_vehicles = self.num_trucks_init
         elif case == 'out_of_range':
@@ -177,7 +172,6 @@ class CaseStudy:
         return (total_truckCap)
         
     def getWindows (self):
-        print ("Aaaaaaaaaaaaaaaaaaaaaaaaaa", self.start)
         start = self.start
         end = self.end
         tw_len = self.tw_len
@@ -305,6 +299,7 @@ class CaseStudy:
         return (demand, dem_per_node,tw_w_demand)
 
     def getTimeR(self):
+        # Returns time per route.
         bus_speed = self.bus_speed # km/h
         routes = self.network.routes
         length_route = self.network.length_route # meters
@@ -312,6 +307,7 @@ class CaseStudy:
         return (time_route)
         
     def getFreqQ (self):
+        # Returnd frequency per route and time window.
         routes = self.network.routes
         twindows = self.twindows
         twindows_peak = self.twindows_peak
@@ -344,6 +340,7 @@ class CaseStudy:
         return (cost_route_round)    
         
     def getCap (self):
+        # Gets total bus capacity.
         network = self.network
         routes = network.routes
         twindows = self.twindows
@@ -359,6 +356,7 @@ class CaseStudy:
         return (cap_basic, tot_cap_basic_tw, tot_cap_basic)
     
     def getDemBusTW(self): 
+        # Returns the total node demand per time window, to be servd by bus.
         nodes_bus_range = self.nodes_bus_range
         demand = self.demand
         twindows = self.twindows
@@ -376,11 +374,9 @@ class CaseStudy:
             bustype = vehicle_route[route]
             routes_type[bustype].append(route)
         return (routes_type)
-
-
-
-        
+     
     def getVmtBus (self, f_meters_to_miles, freq_tw):
+        # Calculates the vehicle-miles traveled per bus.
         routes = self.network.routes
         twindows = self.twindows
         length_route = self.network.length_route

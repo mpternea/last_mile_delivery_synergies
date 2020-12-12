@@ -42,7 +42,6 @@ import main
 truck_fuel_gallons_per_100_miles = 6
 grams_co2_per_fuel_gallon = 8.887
 bus_miles_per_fuel_gallon = 7.2
-f_meters_to_miles = 0.000621371
 
 ################ Network Information #####################
 unit_distance = 100 # meters between consecutive nodes on the grid.
@@ -70,8 +69,6 @@ peak_to_off = 1.5 # High Vs Low average demand according to node type and time o
 # "Peak" here does not refer to traffic or bus frequency peak.
 
 ################ Objective Function Costs #####################
-route_costs = [30000,35000,40000]  #1 Cost of using a route.
-stop_costs = [7000,7500,8000] #2 Cost of using a stop
 c_tm = 455 #3  Cost per tonne mile traveled for each bus.
 c_dwell = 15 # 4 Cost per package to unload at a stop.
 c_local = 5 # 5 Cost of assigning a demand node to a stop for local delivery.
@@ -79,33 +76,32 @@ c_late = 10 # 6 Cost of satisfying demand after its time window.
 c_freq = 500 # 7 Cost of frequency (now I use # 9 instead, as an approximation for operational cost)
 
 
-c_route = {'R3': 35000, 'R2': 30000, 'R1': 30000} # Cost for using each route
-c_stop = {('R3', 12): 7500, ('R2', 6): 8000, ('R1', 56): 8000, ('R3', 94): 8000, ('R2', 116): 7500, ('R1', 66): 7500}
-vehicle_route = {'R3': 'BusType1', 'R2': 'BusType1', 'R1': 'BusType1'}
-b_freq_peak_route = {'R3': 4, 'R2': 5, 'R1': 4}
-b_freq_off_route = {'R3': 2, 'R2': 2, 'R1': 2}
+c_route = {'R3': 35000, 'R2': 30000, 'R1': 30000} #1  Cost for using each route
+c_stop = {('R3', 12): 7500, ('R2', 6): 8000, ('R1', 56): 8000, ('R3', 94): 8000,
+          ('R2', 116): 7500, ('R1', 66): 7500}  #2  Cost for using each stop
+vehicle_route = {'R3': 'BusType1', 'R2': 'BusType1', 'R1': 'BusType1'} # Vehicle type serving each route
+b_freq_peak_route = {'R3': 4, 'R2': 5, 'R1': 4}  # Existing ("basic") route frequency, peak
+b_freq_off_route = {'R3': 2, 'R2': 2, 'R1': 2} # Existing ("basic") route frequency, off-peak
 p_res = 0.5 # Proportion of residential areas (for random generation of area)
 
 ################### Bus Information ###############################
 bus_types = ['BusType1', 'BusType2'] # Available bus types
-cap_bus = {'BusType1':30, 'BusType2': 34}
+cap_bus = {'BusType1':30, 'BusType2': 34} # Capacity per bus type
 fleet_bus = {'BusType1': 40, 'BusType2':20} # Available fleet for each bus type
 cost_fixed_bus = {'BusType1':300000, 'BusType2': 150000} # 8, Fixed cost for each bus (dollars per vehicle)
 cost_km_bus = {'BusType1': 50, 'BusType2':100} # 9 Operating cost for each bus (dollars per km)
-f_peak_range = [4,5] # Bus frequency for peak hours
-f_off_range = [2,3] # Bus frequency for off peak hours.
 fmax = 10 # Maximum hourly frequency
-bus_speed = 30 # km/h #
+bus_speed = 30 # Average bus speed in km/h #
 distlim = 600 # Maximum range within which a node can be served by a bus stop.
 one_tw_per_node = 0 # The demand of a node can be accumulated in 1 time window (1) or in many (0).
 ################### Truck Information ###############################
-single_route_truck = 1 # Indicates whether each truck can return to the depot.
+single_route_truck = 1 # 1 if truck cannot return to  depot for reloading, 0 if yes.
 num_trucks_init = 30 # Number of available trucks
-time_per_dem_unit = 10 # time per demand unit
+time_per_dem_unit = 10 # Time need to serve each demand unit
 horizon = 20*3600 # Maximum allowed trip duration (minutes)
 speed = 25 # Vehicle speed in meters per second
 truck_capacity = 150 # capacity of each vehicle in packages
-num_reloads_per_vehicle = 2
+num_reloads_per_vehicle = 2 # Maximum number of allowed reloads per truck.
 
 ################# Potential parameter ranges ###################################### 
 # A list contains the values of each parameter during sensitivity analysis.
@@ -118,7 +114,7 @@ dem_av_range = [1]
 
 
 #%% experiments
-dem_av_range = [0.2, 0.5, 1, 2, 3, 4, 10]
+dem_av_range = [0.2, 0.5]
 solution = {} # feasible or not
 runtime = {} # Will contain running time for every Experiment
 gap = {} # Will contain MIP gap for every experiment
@@ -134,13 +130,12 @@ net_name_ind = 1
 args  = {"Lx": Lx, "Ly": Ly, "unit_distance": unit_distance, "dstops": dstops,
          "num_areas_per_dimension":num_areas_per_dimension,
          "rhor_y": rhor_y, "rvert_x": rvert_x, "r3x": r3x, "r3y": r3y,
-         "p_res": p_res, "peak_to_off": peak_to_off, "route_costs": route_costs, "stop_costs": stop_costs,
+         "p_res": p_res, "peak_to_off": peak_to_off,
          "c_tm": c_tm, "c_dwell": c_dwell, "c_local": c_local, "c_late": c_late, "c_freq": c_freq,
           "bus_types": bus_types, "cap_bus": cap_bus, "fleet_bus": fleet_bus, "cost_fixed_bus": cost_fixed_bus,
           "cost_km_bus": cost_km_bus, "c_route": c_route, "c_stop": c_stop, "vehicle_route": vehicle_route,
           "b_freq_peak_route": b_freq_peak_route, "b_freq_off_route":b_freq_off_route,
-          "distlim": distlim,"f_peak_range": f_peak_range, "f_off_range": f_off_range,
-          "start": start, "end": end, "twlen": twlen,"bus_start": bus_start, "bus_end": bus_end,
+          "distlim": distlim, "start": start, "end": end, "twlen": twlen,"bus_start": bus_start, "bus_end": bus_end,
           "peak_periods": peak_periods, "bus_speed": bus_speed,"one_tw_per_node": one_tw_per_node,
           "num_trucks_init": num_trucks_init, "time_per_dem_unit": time_per_dem_unit, "horizon": horizon,
           "speed": speed, "truck_capacity": truck_capacity, "single_route_truck": single_route_truck,
@@ -156,7 +151,7 @@ exp_bus_feasible = []
 for (i, dem_av) in enumerate(dem_av_range):
     args["dem_av"] = dem_av
     args["case_name_ind"] = i 
-    new_exp_bus, new_exp_truck, case_study =  main.getmain(args)
+    new_exp_bus, new_exp_truck, case_study = main.getmain(args)
     exp_truck_only.append(new_exp_truck)
     exp_bus_only.append(new_exp_bus)
     case_studies.append(case_study)
